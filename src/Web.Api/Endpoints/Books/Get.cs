@@ -1,4 +1,5 @@
-﻿using Application.Books.Get;
+﻿using Application.Abstractions.Models;
+using Application.Books.Get;
 using MediatR;
 using SharedKernel;
 using Web.Api.Extensions;
@@ -10,11 +11,11 @@ internal sealed class Get : IEndpoint
 {
     public void MapEndpoint(IEndpointRouteBuilder app)
     {
-        app.MapGet("books", async (ISender sender, CancellationToken cancellationToken) =>
+        app.MapGet("books", async (int pageNumber, int pageSize, ISender sender, CancellationToken cancellationToken) =>
         {
-            var command = new GetBooksQuery();
+            var command = new GetBooksQuery(pageNumber, pageSize);
 
-            Result<List<BooksResponse>> result = await sender.Send(command, cancellationToken);
+            Result<PaginatedList<BooksResponse>> result = await sender.Send(command, cancellationToken);
 
             return result.Match(Results.Ok, CustomResults.Problem);
         })

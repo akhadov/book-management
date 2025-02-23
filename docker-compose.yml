@@ -11,6 +11,7 @@ services:
 
   postgres:
     image: postgres:17
+    hostname: postgres
     container_name: postgres
     environment:
       - POSTGRES_DB=book-management
