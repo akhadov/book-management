@@ -1,4 +1,4 @@
-﻿using Domain.Todos;
+﻿using Domain.Books;
 using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +7,7 @@ namespace Application.Abstractions.Data;
 public interface IApplicationDbContext
 {
     DbSet<User> Users { get; }
-    DbSet<TodoItem> TodoItems { get; }
+    DbSet<Book> Books { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
