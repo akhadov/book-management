@@ -1,5 +1,4 @@
-﻿using Application.Abstractions.Authentication;
-using Application.Abstractions.Data;
+﻿using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Domain.Books;
 using Microsoft.EntityFrameworkCore;
@@ -12,18 +11,26 @@ internal sealed class DeleteBookCommandHandler(IApplicationDbContext context)
 {
     public async Task<Result> Handle(DeleteBookCommand command, CancellationToken cancellationToken)
     {
-        Book? book = await context.Books
-            .SingleOrDefaultAsync(t => t.Id == command.BookId, cancellationToken);
-
-        if (book is null)
+        if (command.BookIds is null || command.BookIds.Count == 0)
         {
-            return Result.Failure(BookErrors.NotFound(command.BookId));
+            return Result.Failure(BookErrors.NoBooksProvided());
         }
 
-        context.Books.Remove(book);
+        List<Book>? books = await context.Books
+            .Where(book => command.BookIds.Contains(book.Id))
+            .ToListAsync(cancellationToken);
 
-        book.Raise(new BookDeletedDomainEvent(book.Id));
+        if (books.Count == 0)
+        {
+            return Result.Failure(BookErrors.NoBooksFound());
+        }
 
+        foreach (Book book in books)
+        {
+            book.Raise(new BookDeletedDomainEvent(book.Id));
+        }
+
+        context.Books.RemoveRange(books);
         await context.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

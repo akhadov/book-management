@@ -1,5 +1,4 @@
-﻿using Application.Abstractions.Authentication;
-using Application.Abstractions.Data;
+﻿using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Domain.Books;
 using Microsoft.EntityFrameworkCore;
@@ -12,17 +11,8 @@ internal sealed class GetBookByIdQueryHandler(IApplicationDbContext context)
 {
     public async Task<Result<BookResponse>> Handle(GetBookByIdQuery query, CancellationToken cancellationToken)
     {
-        BookResponse? book = await context.Books
+        Book? book = await context.Books
             .Where(book => book.Id == query.BookId)
-            .Select(book => new BookResponse
-            {
-                Id = book.Id,
-                Title = book.Title,
-                PublicationYear = book.PublicationYear,
-                AuthorName = book.AuthorName,
-                ViewsCount = book.ViewsCount,
-                CreatedAt = book.CreatedAt
-            })
             .SingleOrDefaultAsync(cancellationToken);
 
         if (book is null)
@@ -30,6 +20,20 @@ internal sealed class GetBookByIdQueryHandler(IApplicationDbContext context)
             return Result.Failure<BookResponse>(BookErrors.NotFound(query.BookId));
         }
 
-        return book;
+        book.ViewsCount += 1;
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        var bookResponse = new BookResponse
+        {
+            Id = book.Id,
+            Title = book.Title,
+            PublicationYear = book.PublicationYear,
+            AuthorName = book.AuthorName,
+            ViewsCount = book.ViewsCount,
+            CreatedAt = book.CreatedAt
+        };
+
+        return bookResponse;
     }
 }

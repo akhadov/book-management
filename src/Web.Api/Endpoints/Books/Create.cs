@@ -10,9 +10,7 @@ internal sealed class Create : IEndpoint
 {
     public sealed class Request
     {
-        public string Title { get; set; }
-        public int PublicationYear { get; set; }
-        public string AuthorName { get; set; }
+        public List<BookDto> Books { get; set; } = [];
     }
 
     public void MapEndpoint(IEndpointRouteBuilder app)
@@ -21,12 +19,10 @@ internal sealed class Create : IEndpoint
         {
             var command = new CreateBookCommand
             {
-                Title = request.Title,
-                PublicationYear = request.PublicationYear,
-                AuthorName = request.AuthorName
+                Books = request.Books,
             };
 
-            Result<Guid> result = await sender.Send(command, cancellationToken);
+            Result<List<Guid>> result = await sender.Send(command, cancellationToken);
 
             return result.Match(Results.Ok, CustomResults.Problem);
         })

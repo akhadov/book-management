@@ -2,9 +2,7 @@
 
 namespace Application.Books.Create;
 
-public sealed class CreateBookCommand : ICommand<Guid>
+public sealed class CreateBookCommand : ICommand<List<Guid>>
 {
-    public string Title { get; set; }
-    public int PublicationYear { get; set; }
-    public string AuthorName { get; set; }
+    public List<BookDto> Books { get; set; } = [];
 }

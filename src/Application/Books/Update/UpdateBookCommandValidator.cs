@@ -1,10 +1,9 @@
 ﻿using FluentValidation;
 
-namespace Application.Books.Create;
-
-public class CreateBookCommandValidator : AbstractValidator<BookDto>
+namespace Application.Books.Update;
+public class UpdateBookCommandValidator : AbstractValidator<UpdateBookCommand>
 {
-    public CreateBookCommandValidator()
+    public UpdateBookCommandValidator()
     {
         RuleFor(c => c.Title).NotEmpty();
         RuleFor(c => c.PublicationYear).NotEmpty();

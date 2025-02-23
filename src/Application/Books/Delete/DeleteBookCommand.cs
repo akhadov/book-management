@@ -2,4 +2,4 @@
 
 namespace Application.Books.Delete;
 
-public sealed record DeleteBookCommand(Guid BookId) : ICommand;
+public sealed record DeleteBookCommand(List<Guid> BookIds) : ICommand;

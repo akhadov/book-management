@@ -1,8 +1,6 @@
-﻿using Application.Abstractions.Authentication;
-using Application.Abstractions.Data;
+﻿using Application.Abstractions.Data;
 using Application.Abstractions.Messaging;
 using Domain.Books;
-using Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using SharedKernel;
 
@@ -11,24 +9,40 @@ namespace Application.Books.Create;
 internal sealed class CreateBookCommandHandler(
     IApplicationDbContext context,
     IDateTimeProvider dateTimeProvider)
-    : ICommandHandler<CreateBookCommand, Guid>
+    : ICommandHandler<CreateBookCommand, List<Guid>>
 {
-    public async Task<Result<Guid>> Handle(CreateBookCommand command, CancellationToken cancellationToken)
+    public async Task<Result<List<Guid>>> Handle(CreateBookCommand command, CancellationToken cancellationToken)
     {
-        var book = new Book
+        if (command.Books is null || command.Books.Count == 0)
         {
-            Title = command.Title,
-            PublicationYear = command.PublicationYear,
-            AuthorName = command.AuthorName,
-            CreatedAt = dateTimeProvider.UtcNow
-        };
+            return Result.Failure<List<Guid>>(BookErrors.NoBooksProvided());
+        }
 
-        book.Raise(new BookCreatedDomainEvent(book.Id));
+        List<string> existingTitles = await context.Books
+            .AsNoTracking()
+            .Select(b => b.Title)
+            .ToListAsync(cancellationToken);
 
-        context.Books.Add(book);
+        var newBooks = command.Books
+            .Where(bookDto => !existingTitles.Contains(bookDto.Title))
+            .Select(bookDto => new Book
+            {
+                Id = Guid.NewGuid(),
+                Title = bookDto.Title,
+                PublicationYear = bookDto.PublicationYear,
+                AuthorName = bookDto.AuthorName,
+                CreatedAt = dateTimeProvider.UtcNow
+            })
+            .ToList();
 
+        if (newBooks.Count == 0)
+        {
+            return Result.Failure<List<Guid>>(BookErrors.AllBooksExist());
+        }
+
+        await context.Books.AddRangeAsync(newBooks, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
 
-        return book.Id;
+        return newBooks.Select(b => b.Id).ToList();
     }
 }
